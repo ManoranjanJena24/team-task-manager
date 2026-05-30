@@ -23,6 +23,16 @@ const Organization = sequelize.define(
         notEmpty: true,
       },
     },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      field: "is_active",
+    },
   },
   {
     tableName: "organizations",

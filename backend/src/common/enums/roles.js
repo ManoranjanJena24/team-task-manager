@@ -1,0 +1,11 @@
+const ROLES = {
+  PLATFORM_ADMIN: "PLATFORM_ADMIN",
+
+  ORG_ADMIN: "ORG_ADMIN",
+
+  MANAGER: "MANAGER",
+
+  MEMBER: "MEMBER",
+};
+
+module.exports = ROLES;

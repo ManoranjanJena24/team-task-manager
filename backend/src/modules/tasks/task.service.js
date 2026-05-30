@@ -4,6 +4,11 @@ const repository = require("./task.repository");
 
 const { canTransition } = require("./task-status-machine");
 
+const { getCache, setCache } = require("../../common/utils/cache");
+
+const { buildTaskCacheKey } = require("./task-cache");
+const { invalidateTaskCache } = require("./task-cache.service");
+
 
 const createTask = async (payload, currentUser) => {
   const project = await repository.findProjectById(payload.projectId);
@@ -30,98 +35,145 @@ const createTask = async (payload, currentUser) => {
     );
   }
 
-  return repository.createTask({
+  // return repository.createTask({
+  //   ...payload,
+
+  //   organizationId: currentUser.organizationId,
+
+  //   createdBy: currentUser.userId,
+  // });
+
+  const task = await repository.createTask({
     ...payload,
 
     organizationId: currentUser.organizationId,
 
     createdBy: currentUser.userId,
   });
+
+  await invalidateTaskCache(payload.assigneeId);
+
+  return task;
 };
 
-// const listTasks = async (query, currentUser) => {
-//   const page = Number(query.page) || 1;
 
-//   const limit = Number(query.limit) || 10;
 
-//   const result = await repository.getTasks({
-//     organizationId: currentUser.organizationId,
+// const listTasks = async (
+//   query,
+//   currentUser
+// ) => {
+//   const page =
+//     Number(query.page) || 1;
 
-//     status: query.status,
+//   const limit =
+//     Number(query.limit) || 10;
 
-//     priority: query.priority,
+//   let assigneeId =
+//     query.assigneeId;
 
-//     assigneeId: query.assigneeId,
+//   if (
+//     currentUser.role ===
+//     "MEMBER"
+//   ) {
+//     assigneeId =
+//       currentUser.userId;
+//   }
 
-//     page,
+//   const result =
+//     await repository.getTasks({
+//       organizationId:
+//         currentUser.organizationId,
 
-//     limit,
-//   });
+//       status:
+//         query.status,
+
+//       priority:
+//         query.priority,
+
+//       assigneeId,
+
+//       page,
+
+//       limit
+//     });
 
 //   return {
-//     total: result.count,
+//     total:
+//       result.count,
 
 //     page,
 
 //     limit,
 
-//     tasks: result.rows,
+//     tasks:
+//       result.rows
 //   };
 // };
 
 
-const listTasks = async (
-  query,
-  currentUser
-) => {
-  const page =
-    Number(query.page) || 1;
 
-  const limit =
-    Number(query.limit) || 10;
+const listTasks = async (query, currentUser) => {
+  const page = Number(query.page) || 1;
 
-  let assigneeId =
-    query.assigneeId;
+  const limit = Number(query.limit) || 10;
 
-  if (
-    currentUser.role ===
-    "MEMBER"
-  ) {
-    assigneeId =
-      currentUser.userId;
+  let assigneeId = query.assigneeId;
+
+  if (currentUser.role === "MEMBER") {
+    assigneeId = currentUser.userId;
   }
 
-  const result =
-    await repository.getTasks({
-      organizationId:
-        currentUser.organizationId,
+  const cacheKey = buildTaskCacheKey({
+    userId: currentUser.userId,
 
-      status:
-        query.status,
+    status: query.status,
 
-      priority:
-        query.priority,
+    priority: query.priority,
 
-      assigneeId,
+    page,
 
-      page,
+    limit,
+  });
+  console.log("Looking for cache", cacheKey)
 
-      limit
-    });
+  const cachedData = await getCache(cacheKey);
 
-  return {
-    total:
-      result.count,
+  if (cachedData) {
+    console.log("Returning tasks from cache");
+
+    return cachedData;
+  }
+
+  const result = await repository.getTasks({
+    organizationId: currentUser.organizationId,
+
+    status: query.status,
+
+    priority: query.priority,
+
+    assigneeId,
+
+    page,
+
+    limit,
+  });
+
+  const response = {
+    total: result.count,
 
     page,
 
     limit,
 
-    tasks:
-      result.rows
+    tasks: result.rows,
   };
-};
 
+  console.log("Saving to cache", cacheKey , response)
+
+  await setCache(cacheKey, response);
+
+  return response;
+};
 const getTask = async (taskId, currentUser) => {
   const task = await repository.getTaskById(taskId);
 
@@ -153,7 +205,7 @@ const updateTask = async (taskId, payload, currentUser) => {
   }
 
   await repository.updateTaskById(taskId, payload);
-
+await invalidateTaskCache(task.assigneeId);
   return repository.getTaskById(taskId);
 };
 
@@ -168,7 +220,7 @@ const deleteTask = async (taskId, currentUser) => {
   if (task.organizationId !== currentUser.organizationId) {
     throw new AppError(403, "FORBIDDEN", "Access denied");
   }
-
+ await invalidateTaskCache(task.assigneeId);
   await repository.deleteTask(taskId);
 };
 
@@ -214,6 +266,7 @@ const updateStatus = async (taskId, newStatus, currentUser) => {
   }
 
   await repository.updateTaskById(taskId, updatePayload);
+  await invalidateTaskCache(task.assigneeId);
 
   return repository.getTaskById(taskId);
 };

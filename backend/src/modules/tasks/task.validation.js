@@ -24,7 +24,13 @@ const updateTaskSchema = z.object({
   dueDate: z.string().optional(),
 });
 
+
+const updateStatusSchema = z.object({
+  status: z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE", "BLOCKED"]),
+});
+
 module.exports = {
   createTaskSchema,
   updateTaskSchema,
+  updateStatusSchema,
 };

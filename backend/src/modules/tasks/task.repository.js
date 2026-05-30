@@ -62,47 +62,99 @@ const deleteTask = (
   });
 };
 
+// const getTasks = ({
+//   organizationId,
+
+//   status,
+
+//   priority,
+
+//   assigneeId,
+
+//   page,
+
+//   limit
+// }) => {
+//   const where = {
+//     organizationId
+//   };
+
+//   if (status)
+//     where.status = status;
+
+//   if (priority)
+//     where.priority =
+//       priority;
+
+//   if (assigneeId)
+//     where.assigneeId =
+//       assigneeId;
+
+//   return Task.findAndCountAll({
+//     where,
+
+//     limit,
+
+//     offset:
+//       (page - 1) * limit,
+
+//     order: [
+//       ["createdAt", "DESC"]
+//     ]
+//   });
+// };
+
+
 const getTasks = ({
   organizationId,
-
   status,
-
   priority,
-
   assigneeId,
-
   page,
-
-  limit
+  limit,
 }) => {
   const where = {
-    organizationId
+    organizationId,
   };
 
-  if (status)
+  if (status) {
     where.status = status;
+  }
 
-  if (priority)
-    where.priority =
-      priority;
+  if (priority) {
+    where.priority = priority;
+  }
 
-  if (assigneeId)
-    where.assigneeId =
-      assigneeId;
+  if (assigneeId) {
+    where.assigneeId = assigneeId;
+  }
 
   return Task.findAndCountAll({
     where,
 
     limit,
 
-    offset:
-      (page - 1) * limit,
+    offset: (page - 1) * limit,
 
-    order: [
-      ["createdAt", "DESC"]
-    ]
+    order: [["createdAt", "DESC"]],
   });
 };
+
+const getTaskById = (taskId) => {
+  return Task.findByPk(taskId);
+};
+
+
+const updateTaskById = (taskId, payload) => {
+  return Task.update(payload, {
+    where: {
+      id: taskId,
+    },
+  });
+};
+
+
+
 
 module.exports = {
   createTask,
@@ -117,5 +169,8 @@ module.exports = {
 
   deleteTask,
 
-  getTasks
+  getTasks,
+
+  getTaskById,
+  updateTaskById,
 };

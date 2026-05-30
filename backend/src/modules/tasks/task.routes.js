@@ -10,7 +10,8 @@ const validate = require("../../middleware/validation.middleware");
 
 const controller = require("./task.controller");
 
-const { createTaskSchema } = require("./task.validation");
+const { createTaskSchema  } = require("./task.validation");
+const { updateTaskSchema, updateStatusSchema } = require("./task.validation");
 
 router.post(
   "/",
@@ -32,4 +33,36 @@ router.get(
   controller.listTasks,
 );
 
+router.get("/:id", authenticate, controller.getTask);
+router.patch(
+  "/:id",
+
+  authenticate,
+
+  authorize("ORG_ADMIN", "MANAGER"),
+
+  validate(updateTaskSchema),
+
+  controller.updateTask,
+);
+
+router.delete(
+  "/:id",
+
+  authenticate,
+
+  authorize("ORG_ADMIN", "MANAGER"),
+
+  controller.deleteTask,
+);
+
+router.patch(
+  "/:id/status",
+
+  authenticate,
+
+  validate(updateStatusSchema),
+
+  controller.updateStatus,
+);
 module.exports = router;

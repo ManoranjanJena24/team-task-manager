@@ -1,0 +1,10 @@
+module.exports = {
+  PLATFORM_ADMIN: "PLATFORM_ADMIN",
+
+  ORG_ADMIN: "ORG_ADMIN",
+
+  MANAGER: "MANAGER",
+
+  MEMBER: "MEMBER",
+};
+

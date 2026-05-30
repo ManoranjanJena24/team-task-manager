@@ -8,7 +8,10 @@ const authenticate = require("../middleware/auth.middleware");
 
 const authorize = require("../middleware/rbac.middleware");
 
+const organizationRoutes = require("../modules/organizations/organization.routes");
+
 router.use("/auth", authRoutes);
+router.use("/organizations", organizationRoutes);
 
 router.get(
   "/admin-test",

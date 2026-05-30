@@ -12,12 +12,14 @@ const organizationRoutes = require("../modules/organizations/organization.routes
 
 const userRoutes = require("../modules/users/user.routes");
 const projectRoutes = require("../modules/projects/project.routes");
+const taskRoutes = require("../modules/tasks/task.routes");
 
 
 router.use("/auth", authRoutes);
 router.use("/organizations", organizationRoutes);
 router.use("/users", userRoutes);
 router.use("/projects", projectRoutes);
+router.use("/tasks", taskRoutes);
 
 router.get(
   "/admin-test",

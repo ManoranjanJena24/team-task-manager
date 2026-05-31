@@ -29,9 +29,30 @@ const updateLastLogin = (userId) => {
   );
 };
 
+const findRefreshTokenByHash = async (tokenHash) => {
+  return RefreshToken.findOne({
+    where: {
+      tokenHash,
+    },
+  });
+};
+
+const revokeRefreshToken = async (id) => {
+  return RefreshToken.update(
+    {
+      revokedAt: new Date(),
+    },
+    {
+      where: { id },
+    },
+  );
+};
+
 module.exports = {
   findUserByEmail,
   findUserById,
   createRefreshToken,
   updateLastLogin,
+  findRefreshTokenByHash,
+  revokeRefreshToken,
 };

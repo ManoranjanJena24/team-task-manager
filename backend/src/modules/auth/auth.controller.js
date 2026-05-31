@@ -18,6 +18,24 @@ const login = async (req, res, next) => {
   }
 };
 
+
+const refreshToken = async (req, res, next) => {
+  try {
+    const result = await authService.refreshTokens(req.body.refreshToken);
+
+    return res.status(200).json({
+      status: 200,
+
+      message: "Token refreshed successfully",
+
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   login,
+  refreshToken,
 };

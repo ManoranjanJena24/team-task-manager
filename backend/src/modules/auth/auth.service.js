@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const AppError = require("../../errors/AppError");
 
 const authRepository = require("./auth.repository");
+const { verifyRefreshToken } = require("../../common/utils/jwt");
 
 const {
   generateAccessToken,
@@ -67,6 +68,71 @@ const login = async (email, password) => {
   };
 };
 
+const refreshTokens = async (refreshToken) => {
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  const storedToken = await authRepository.findRefreshTokenByHash(tokenHash);
+
+  if (!storedToken) {
+    throw new AppError(
+      401,
+      "INVALID_REFRESH_TOKEN",
+      "Refresh token is invalid",
+    );
+  }
+
+  if (storedToken.revokedAt) {
+    throw new AppError(
+      401,
+      "INVALID_REFRESH_TOKEN",
+      "Refresh token already revoked",
+    );
+  }
+
+  if (storedToken.expiresAt < new Date()) {
+    throw new AppError(401, "REFRESH_TOKEN_EXPIRED", "Refresh token expired");
+  }
+
+  const payload = verifyRefreshToken(refreshToken);
+
+  await authRepository.revokeRefreshToken(storedToken.id);
+
+  const newPayload = {
+    userId: payload.userId,
+
+    role: payload.role,
+
+    organizationId: payload.organizationId,
+  };
+
+  const newAccessToken = generateAccessToken(newPayload);
+
+  const newRefreshToken = generateRefreshToken(newPayload);
+
+  const newHash = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  await authRepository.createRefreshToken({
+    userId: payload.userId,
+
+    tokenHash: newHash,
+
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  return {
+    accessToken: newAccessToken,
+
+    refreshToken: newRefreshToken,
+  };
+};
+
 module.exports = {
   login,
+  refreshTokens,
 };

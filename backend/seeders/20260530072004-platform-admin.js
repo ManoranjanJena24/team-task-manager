@@ -1,14 +1,33 @@
 "use strict";
 
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 module.exports = {
-  async up(queryInterface) {
+  async up(queryInterface, Sequelize) {
+    const existingUser = await queryInterface.sequelize.query(
+      `
+        SELECT id
+        FROM users
+        WHERE email = 'admin@tasktracker.com'
+        LIMIT 1
+        `,
+      {
+        type: Sequelize.QueryTypes.SELECT,
+      },
+    );
+
+    if (existingUser.length) {
+      console.log("Platform admin already exists. Skipping seed.");
+
+      return;
+    }
+
     const passwordHash = await bcrypt.hash("Admin@123", 10);
 
     await queryInterface.bulkInsert("users", [
       {
-        id: require("crypto").randomUUID(),
+        id: crypto.randomUUID(),
 
         organization_id: null,
 
@@ -27,6 +46,8 @@ module.exports = {
         updated_at: new Date(),
       },
     ]);
+
+    console.log("Platform admin seeded successfully.");
   },
 
   async down(queryInterface) {
